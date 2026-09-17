@@ -1,0 +1,2862 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Healthcare Data Quality Assurance and SQL Analytics\n",
+    "\n",
+    "This notebook demonstrates how to load refined healthcare data, perform extensive data quality checks using PySpark, store the results into a Gold-layer quality reporting table, and execute SQL analytical queries to generate operational healthcare insights."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 1: Load Silver Hospital Records\n",
+    "We start by loading the dataset `silver_hospital_records` from the `workspace.healthcare` database into a PySpark DataFrame and displaying its contents to inspect initial records."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788504726467,
+     "inputWidgets": {},
+     "nuid": "ccba4e84-81ab-4427-bd84-1892cb9e52ab",
+     "showTitle": false,
+     "startTime": 1788504685076,
+     "submitTime": 1788504684815,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>patient_id</th><th>first_name</th><th>last_name</th><th>gender</th><th>age</th><th>city</th><th>doctor_id</th><th>doctor_name</th><th>department</th><th>specialization</th><th>diagnosis</th><th>admission_date</th><th>discharge_date</th><th>length_of_stay</th></tr></thead><tbody><tr><td>A004</td><td>P004</td><td>Sneha</td><td>Patel</td><td>FEMALE</td><td>31</td><td>Bangalore</td><td>D004</td><td>Dr. Sneha Reddy</td><td>Pediatrics</td><td>Pediatrician</td><td>Viral Fever</td><td>2026-02-08</td><td>2026-02-12</td><td>4</td></tr><tr><td>A003</td><td>P003</td><td>Arjun</td><td>Reddy</td><td>MALE</td><td>48</td><td>Hyderabad</td><td>D003</td><td>Dr. Amit Verma</td><td>Orthopedics</td><td>Orthopedic Surgeon</td><td>Bone Fracture</td><td>2026-02-05</td><td>2026-02-10</td><td>5</td></tr><tr><td>A005</td><td>P005</td><td>Vikram</td><td>Singh</td><td>MALE</td><td>44</td><td>Delhi</td><td>D005</td><td>Dr. Arjun Rao</td><td>General Medicine</td><td>General Physician</td><td>Diabetes</td><td>2026-03-01</td><td>2026-03-04</td><td>3</td></tr><tr><td>A001</td><td>P001</td><td>Rahul</td><td>Sharma</td><td>MALE</td><td>41</td><td>Hyderabad</td><td>D001</td><td>Dr. Rajesh Kumar</td><td>Cardiology</td><td>Cardiologist</td><td>Heart Disease</td><td>2026-01-10</td><td>2026-01-15</td><td>5</td></tr><tr><td>A002</td><td>P002</td><td>Priya</td><td>Rao</td><td>FEMALE</td><td>36</td><td>Mumbai</td><td>D002</td><td>Dr. Priya Sharma</td><td>Neurology</td><td>Neurologist</td><td>Migraine</td><td>2026-01-12</td><td>2026-01-18</td><td>6</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "A004",
+         "P004",
+         "Sneha",
+         "Patel",
+         "FEMALE",
+         31,
+         "Bangalore",
+         "D004",
+         "Dr. Sneha Reddy",
+         "Pediatrics",
+         "Pediatrician",
+         "Viral Fever",
+         "2026-02-08",
+         "2026-02-12",
+         4
+        ],
+        [
+         "A003",
+         "P003",
+         "Arjun",
+         "Reddy",
+         "MALE",
+         48,
+         "Hyderabad",
+         "D003",
+         "Dr. Amit Verma",
+         "Orthopedics",
+         "Orthopedic Surgeon",
+         "Bone Fracture",
+         "2026-02-05",
+         "2026-02-10",
+         5
+        ],
+        [
+         "A005",
+         "P005",
+         "Vikram",
+         "Singh",
+         "MALE",
+         44,
+         "Delhi",
+         "D005",
+         "Dr. Arjun Rao",
+         "General Medicine",
+         "General Physician",
+         "Diabetes",
+         "2026-03-01",
+         "2026-03-04",
+         3
+        ],
+        [
+         "A001",
+         "P001",
+         "Rahul",
+         "Sharma",
+         "MALE",
+         41,
+         "Hyderabad",
+         "D001",
+         "Dr. Rajesh Kumar",
+         "Cardiology",
+         "Cardiologist",
+         "Heart Disease",
+         "2026-01-10",
+         "2026-01-15",
+         5
+        ],
+        [
+         "A002",
+         "P002",
+         "Priya",
+         "Rao",
+         "FEMALE",
+         36,
+         "Mumbai",
+         "D002",
+         "Dr. Priya Sharma",
+         "Neurology",
+         "Neurologist",
+         "Migraine",
+         "2026-01-12",
+         "2026-01-18",
+         6
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "patient_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "first_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "last_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "gender",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "age",
+         "type": "\"integer\""
+        },
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "specialization",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "admission_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "discharge_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "length_of_stay",
+         "type": "\"integer\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "hospital_records = spark.table(\"workspace.healthcare.silver_hospital_records\")\n",
+    "\n",
+    "display(hospital_records)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 2: Inspect Schema\n",
+    "We check column names, data types, and nullability characteristics using `printSchema()`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788504726889,
+     "inputWidgets": {},
+     "nuid": "d532b84e-6264-45c0-b0e4-fa90bc798330",
+     "showTitle": false,
+     "startTime": 1788504726689,
+     "submitTime": 1788504717430,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "root\n |-- admission_id: string (nullable = true)\n |-- patient_id: string (nullable = true)\n |-- first_name: string (nullable = true)\n |-- last_name: string (nullable = true)\n |-- gender: string (nullable = true)\n |-- age: integer (nullable = true)\n |-- city: string (nullable = true)\n |-- doctor_id: string (nullable = true)\n |-- doctor_name: string (nullable = true)\n |-- department: string (nullable = true)\n |-- specialization: string (nullable = true)\n |-- diagnosis: string (nullable = true)\n |-- admission_date: date (nullable = true)\n |-- discharge_date: date (nullable = true)\n |-- length_of_stay: integer (nullable = true)\n\n"
+     ]
+    }
+   ],
+   "source": [
+    "hospital_records.printSchema()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 3: Check Null Counts across Columns\n",
+    "We construct a dynamic programmatic aggregation to count the number of NULL values for every column in the dataset."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788505004261,
+     "inputWidgets": {},
+     "nuid": "8456d1ec-62d2-430a-a941-204d970ef29d",
+     "showTitle": false,
+     "startTime": 1788505001818,
+     "submitTime": 1788505001756,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>patient_id</th><th>first_name</th><th>last_name</th><th>gender</th><th>age</th><th>city</th><th>doctor_id</th><th>doctor_name</th><th>department</th><th>specialization</th><th>diagnosis</th><th>admission_date</th><th>discharge_date</th><th>length_of_stay</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "patient_id",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "first_name",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "last_name",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "gender",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "age",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_id",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "specialization",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "admission_date",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "discharge_date",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "length_of_stay",
+         "type": "\"long\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "from pyspark.sql.functions import (\n",
+    "    col,\n",
+    "    sum,\n",
+    "    when\n",
+    ")\n",
+    "\n",
+    "null_check = hospital_records.select(\n",
+    "    [\n",
+    "        sum(\n",
+    "            when(col(column_name).isNull(), 1)\n",
+    "            .otherwise(0)\n",
+    "        ).alias(column_name)\n",
+    "        \n",
+    "        for column_name in hospital_records.columns\n",
+    "    ]\n",
+    ")\n",
+    "\n",
+    "display(null_check)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 4: Duplicate Primary Key Check\n",
+    "We group by `admission_id` and filter for counts greater than 1 to ensure primary key uniqueness."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788505028791,
+     "inputWidgets": {},
+     "nuid": "f1015a75-3e84-4a43-bdb4-7d664b9d09d0",
+     "showTitle": false,
+     "startTime": 1788505027362,
+     "submitTime": 1788505027320,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>count</th></tr></thead><tbody></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "count",
+         "type": "\"long\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "duplicate_admissions = hospital_records.groupBy(\n",
+    "    \"admission_id\"\n",
+    ").count().filter(\n",
+    "    col(\"count\") > 1\n",
+    ")\n",
+    "\n",
+    "display(duplicate_admissions)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 5: Check Range Validity for Age\n",
+    "Validate that patient ages fall within valid biological boundaries (between 0 and 120)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788505062444,
+     "inputWidgets": {},
+     "nuid": "cb78594a-9eea-4781-b0cb-e4000116b56d",
+     "showTitle": false,
+     "startTime": 1788505061423,
+     "submitTime": 1788505061386,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>patient_id</th><th>first_name</th><th>last_name</th><th>gender</th><th>age</th><th>city</th><th>doctor_id</th><th>doctor_name</th><th>department</th><th>specialization</th><th>diagnosis</th><th>admission_date</th><th>discharge_date</th><th>length_of_stay</th></tr></thead><tbody></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "patient_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "first_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "last_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "gender",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "age",
+         "type": "\"integer\""
+        },
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "specialization",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "admission_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "discharge_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "length_of_stay",
+         "type": "\"integer\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "invalid_age_records = hospital_records.filter(\n",
+    "    (col(\"age\") < 0) |\n",
+    "    (col(\"age\") > 120)\n",
+    ")\n",
+    "\n",
+    "display(invalid_age_records)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 6: Identify Records Missing Critical Data\n",
+    "Check for missing mandatory values in essential fields such as `doctor_name`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788505124206,
+     "inputWidgets": {},
+     "nuid": "8c619bc6-69d1-4a11-a685-3e7820584d7b",
+     "showTitle": false,
+     "startTime": 1788505123196,
+     "submitTime": 1788505123136,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>patient_id</th><th>first_name</th><th>last_name</th><th>gender</th><th>age</th><th>city</th><th>doctor_id</th><th>doctor_name</th><th>department</th><th>specialization</th><th>diagnosis</th><th>admission_date</th><th>discharge_date</th><th>length_of_stay</th></tr></thead><tbody></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "patient_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "first_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "last_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "gender",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "age",
+         "type": "\"integer\""
+        },
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "specialization",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "admission_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "discharge_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "length_of_stay",
+         "type": "\"integer\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "missing_doctor_records = hospital_records.filter(\n",
+    "    col(\"doctor_name\").isNull()\n",
+    ")\n",
+    "\n",
+    "display(missing_doctor_records)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 7: Imports for Timestamp functions\n",
+    "Import necessary PySpark SQL functions (`lit`, `current_timestamp`) for generating report metadata."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788505968331,
+     "inputWidgets": {},
+     "nuid": "e28e13dc-db2d-4d62-bd7f-ae91831989f0",
+     "showTitle": false,
+     "startTime": 1788505968236,
+     "submitTime": 1788505968173,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from pyspark.sql.functions import (\n",
+    "    lit,\n",
+    "    current_timestamp\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 8: Calculate Violation Metrics\n",
+    "Filter for negative length of stay and compute total counts across all quality check conditions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506112579,
+     "inputWidgets": {},
+     "nuid": "fa74ce2a-2653-4fb1-8731-e12eec6429b2",
+     "showTitle": true,
+     "startTime": 1788506107913,
+     "submitTime": 1788506107857,
+     "tableResultSettingsMap": {},
+     "title": "Cell 8"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# Define invalid_stay_records\n",
+    "invalid_stay_records = hospital_records.filter(\n",
+    "    (col(\"length_of_stay\") < 0)\n",
+    ")\n",
+    "\n",
+    "total_records = hospital_records.count()\n",
+    "\n",
+    "duplicate_count = duplicate_admissions.count()\n",
+    "\n",
+    "invalid_age_count = invalid_age_records.count()\n",
+    "\n",
+    "invalid_stay_count = invalid_stay_records.count()\n",
+    "\n",
+    "missing_doctor_count = missing_doctor_records.count()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 9: Construct Data Quality Audit Structure\n",
+    "Build a list of `Row` objects evaluating PASS/FAIL statuses based on metric threshold results."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506163626,
+     "inputWidgets": {},
+     "nuid": "d174e0d5-690e-49c5-8468-128888fd8d7e",
+     "showTitle": false,
+     "startTime": 1788506163484,
+     "submitTime": 1788506163449,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from pyspark.sql import Row\n",
+    "\n",
+    "quality_data = [\n",
+    "    \n",
+    "    Row(\n",
+    "        check_name=\"Total Records\",\n",
+    "        invalid_records=0,\n",
+    "        total_records=total_records,\n",
+    "        status=\"INFO\"\n",
+    "    ),\n",
+    "    \n",
+    "    Row(\n",
+    "        check_name=\"Duplicate Admissions\",\n",
+    "        invalid_records=duplicate_count,\n",
+    "        total_records=total_records,\n",
+    "        status=(\n",
+    "            \"PASS\"\n",
+    "            if duplicate_count == 0\n",
+    "            else \"FAIL\"\n",
+    "        )\n",
+    "    ),\n",
+    "    \n",
+    "    Row(\n",
+    "        check_name=\"Invalid Age\",\n",
+    "        invalid_records=invalid_age_count,\n",
+    "        total_records=total_records,\n",
+    "        status=(\n",
+    "            \"PASS\"\n",
+    "            if invalid_age_count == 0\n",
+    "            else \"FAIL\"\n",
+    "        )\n",
+    "    ),\n",
+    "    \n",
+    "    Row(\n",
+    "        check_name=\"Invalid Length of Stay\",\n",
+    "        invalid_records=invalid_stay_count,\n",
+    "        total_records=total_records,\n",
+    "        status=(\n",
+    "            \"PASS\"\n",
+    "            if invalid_stay_count == 0\n",
+    "            else \"FAIL\"\n",
+    "        )\n",
+    "    ),\n",
+    "    \n",
+    "    Row(\n",
+    "        check_name=\"Missing Doctor Information\",\n",
+    "        invalid_records=missing_doctor_count,\n",
+    "        total_records=total_records,\n",
+    "        status=(\n",
+    "            \"PASS\"\n",
+    "            if missing_doctor_count == 0\n",
+    "            else \"FAIL\"\n",
+    "        )\n",
+    "    )\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 10: Convert Audit Records to Spark DataFrame\n",
+    "Transform the row objects into a structured Spark DataFrame."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506204764,
+     "inputWidgets": {},
+     "nuid": "6eef526e-6acc-4369-82a2-72cc07105118",
+     "showTitle": false,
+     "startTime": 1788506204287,
+     "submitTime": 1788506204252,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [],
+   "source": [
+    "quality_report = spark.createDataFrame(\n",
+    "    quality_data\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 11: Add Audit Timestamp\n",
+    "Append an execution timestamp column (`check_timestamp`) to trace when quality checks occurred."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506232997,
+     "inputWidgets": {},
+     "nuid": "23dd69ee-9523-406f-90db-cd764899561c",
+     "showTitle": false,
+     "startTime": 1788506232245,
+     "submitTime": 1788506232178,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>check_name</th><th>invalid_records</th><th>total_records</th><th>status</th><th>check_timestamp</th></tr></thead><tbody><tr><td>Total Records</td><td>0</td><td>5</td><td>INFO</td><td>2026-09-04T07:17:12.449Z</td></tr><tr><td>Duplicate Admissions</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:17:12.449Z</td></tr><tr><td>Invalid Age</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:17:12.449Z</td></tr><tr><td>Invalid Length of Stay</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:17:12.449Z</td></tr><tr><td>Missing Doctor Information</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:17:12.449Z</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Total Records",
+         0,
+         5,
+         "INFO",
+         "2026-09-04T07:17:12.449Z"
+        ],
+        [
+         "Duplicate Admissions",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:17:12.449Z"
+        ],
+        [
+         "Invalid Age",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:17:12.449Z"
+        ],
+        [
+         "Invalid Length of Stay",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:17:12.449Z"
+        ],
+        [
+         "Missing Doctor Information",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:17:12.449Z"
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "check_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "invalid_records",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_records",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "status",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "check_timestamp",
+         "type": "\"timestamp\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "quality_report = quality_report.withColumn(\n",
+    "    \"check_timestamp\",\n",
+    "    current_timestamp()\n",
+    ")\n",
+    "\n",
+    "display(quality_report)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 12: Write Gold Quality Report Table\n",
+    "Persist the compiled quality audit results to the Gold Delta table `gold_data_quality_report`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506554706,
+     "inputWidgets": {},
+     "nuid": "8c046120-9406-44f6-8ff8-77358b664b7f",
+     "showTitle": true,
+     "startTime": 1788506545341,
+     "submitTime": 1788506545276,
+     "tableResultSettingsMap": {},
+     "title": "Cell 12"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>check_name</th><th>invalid_records</th><th>total_records</th><th>status</th><th>check_timestamp</th></tr></thead><tbody><tr><td>Total Records</td><td>0</td><td>5</td><td>INFO</td><td>2026-09-04T07:22:28.929Z</td></tr><tr><td>Duplicate Admissions</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:22:28.929Z</td></tr><tr><td>Invalid Age</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:22:28.929Z</td></tr><tr><td>Invalid Length of Stay</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:22:28.929Z</td></tr><tr><td>Missing Doctor Information</td><td>0</td><td>5</td><td>PASS</td><td>2026-09-04T07:22:28.929Z</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Total Records",
+         0,
+         5,
+         "INFO",
+         "2026-09-04T07:22:28.929Z"
+        ],
+        [
+         "Duplicate Admissions",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:22:28.929Z"
+        ],
+        [
+         "Invalid Age",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:22:28.929Z"
+        ],
+        [
+         "Invalid Length of Stay",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:22:28.929Z"
+        ],
+        [
+         "Missing Doctor Information",
+         0,
+         5,
+         "PASS",
+         "2026-09-04T07:22:28.929Z"
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "check_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "invalid_records",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_records",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "status",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "check_timestamp",
+         "type": "\"timestamp\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "quality_report.write.mode(\"overwrite\").saveAsTable(\n",
+    "    \"workspace.healthcare.gold_data_quality_report\"\n",
+    ")\n",
+    "\n",
+    "display(\n",
+    "    spark.table(\n",
+    "        \"workspace.healthcare.gold_data_quality_report\"\n",
+    "    )\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 13: Create Temporary View for Spark SQL Operations\n",
+    "Register `hospital_records` as a local temporary view named `hospital_records` to query it via standard Spark SQL syntax."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506613891,
+     "inputWidgets": {},
+     "nuid": "4147773c-7b76-45cc-89fd-42a895fc9d16",
+     "showTitle": false,
+     "startTime": 1788506613205,
+     "submitTime": 1788506613170,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [],
+   "source": [
+    "hospital_records.createOrReplaceTempView(\n",
+    "    \"hospital_records\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 14: SQL Initialization\n",
+    "Cell initialization placeholder for switching execution modes."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506632509,
+     "inputWidgets": {},
+     "nuid": "c9baf9f5-33b6-4826-9931-66db97c2f9fd",
+     "showTitle": false,
+     "startTime": 1788506632363,
+     "submitTime": 1788506632322,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       ""
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "arguments": {},
+       "datasetInfos": [],
+       "jupyterProps": {
+        "ename": "UsageError",
+        "evalue": "%%sql is a cell magic, but the cell body is empty."
+       },
+       "metadata": {
+        "errorSummary": "UsageError: %%sql is a cell magic, but the cell body is empty.\n[Trace ID: 00-9ef864e546ad09f7d3acaee5c47a4918-bd8bdf489bd14710-01]"
+       },
+       "removedWidgets": [],
+       "sqlProps": {
+        "breakingChangeInfo": null,
+        "errorClass": "PRE_INSTALLED_NON_DATABRICKS_LIBRARY_ERROR",
+        "pysparkCallSite": null,
+        "pysparkFragment": null,
+        "pysparkSummary": null,
+        "sqlState": "KAN01",
+        "stackTrace": null,
+        "startIndex": null,
+        "stopIndex": null
+       },
+       "stackFrames": [],
+       "type": "baseError"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 15: Retrieve All Records via SQL\n",
+    "Query the temporary view directly using `%sql` cell magic to verify SQL accessibility."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "implicitDf": true,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506660575,
+     "inputWidgets": {},
+     "nuid": "6e447f9b-cf8e-45c0-aaae-f9e9bcd82bde",
+     "showTitle": false,
+     "startTime": 1788506658999,
+     "submitTime": 1788506658968,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>patient_id</th><th>first_name</th><th>last_name</th><th>gender</th><th>age</th><th>city</th><th>doctor_id</th><th>doctor_name</th><th>department</th><th>specialization</th><th>diagnosis</th><th>admission_date</th><th>discharge_date</th><th>length_of_stay</th></tr></thead><tbody><tr><td>A004</td><td>P004</td><td>Sneha</td><td>Patel</td><td>FEMALE</td><td>31</td><td>Bangalore</td><td>D004</td><td>Dr. Sneha Reddy</td><td>Pediatrics</td><td>Pediatrician</td><td>Viral Fever</td><td>2026-02-08</td><td>2026-02-12</td><td>4</td></tr><tr><td>A003</td><td>P003</td><td>Arjun</td><td>Reddy</td><td>MALE</td><td>48</td><td>Hyderabad</td><td>D003</td><td>Dr. Amit Verma</td><td>Orthopedics</td><td>Orthopedic Surgeon</td><td>Bone Fracture</td><td>2026-02-05</td><td>2026-02-10</td><td>5</td></tr><tr><td>A005</td><td>P005</td><td>Vikram</td><td>Singh</td><td>MALE</td><td>44</td><td>Delhi</td><td>D005</td><td>Dr. Arjun Rao</td><td>General Medicine</td><td>General Physician</td><td>Diabetes</td><td>2026-03-01</td><td>2026-03-04</td><td>3</td></tr><tr><td>A001</td><td>P001</td><td>Rahul</td><td>Sharma</td><td>MALE</td><td>41</td><td>Hyderabad</td><td>D001</td><td>Dr. Rajesh Kumar</td><td>Cardiology</td><td>Cardiologist</td><td>Heart Disease</td><td>2026-01-10</td><td>2026-01-15</td><td>5</td></tr><tr><td>A002</td><td>P002</td><td>Priya</td><td>Rao</td><td>FEMALE</td><td>36</td><td>Mumbai</td><td>D002</td><td>Dr. Priya Sharma</td><td>Neurology</td><td>Neurologist</td><td>Migraine</td><td>2026-01-12</td><td>2026-01-18</td><td>6</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "A004",
+         "P004",
+         "Sneha",
+         "Patel",
+         "FEMALE",
+         31,
+         "Bangalore",
+         "D004",
+         "Dr. Sneha Reddy",
+         "Pediatrics",
+         "Pediatrician",
+         "Viral Fever",
+         "2026-02-08",
+         "2026-02-12",
+         4
+        ],
+        [
+         "A003",
+         "P003",
+         "Arjun",
+         "Reddy",
+         "MALE",
+         48,
+         "Hyderabad",
+         "D003",
+         "Dr. Amit Verma",
+         "Orthopedics",
+         "Orthopedic Surgeon",
+         "Bone Fracture",
+         "2026-02-05",
+         "2026-02-10",
+         5
+        ],
+        [
+         "A005",
+         "P005",
+         "Vikram",
+         "Singh",
+         "MALE",
+         44,
+         "Delhi",
+         "D005",
+         "Dr. Arjun Rao",
+         "General Medicine",
+         "General Physician",
+         "Diabetes",
+         "2026-03-01",
+         "2026-03-04",
+         3
+        ],
+        [
+         "A001",
+         "P001",
+         "Rahul",
+         "Sharma",
+         "MALE",
+         41,
+         "Hyderabad",
+         "D001",
+         "Dr. Rajesh Kumar",
+         "Cardiology",
+         "Cardiologist",
+         "Heart Disease",
+         "2026-01-10",
+         "2026-01-15",
+         5
+        ],
+        [
+         "A002",
+         "P002",
+         "Priya",
+         "Rao",
+         "FEMALE",
+         36,
+         "Mumbai",
+         "D002",
+         "Dr. Priya Sharma",
+         "Neurology",
+         "Neurologist",
+         "Migraine",
+         "2026-01-12",
+         "2026-01-18",
+         6
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {
+        "createTempViewForImplicitDf": true,
+        "dataframeName": "_sqldf",
+        "executionCount": 65
+       },
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "patient_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "first_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "last_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "gender",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "age",
+         "type": "\"integer\""
+        },
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "specialization",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "admission_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "discharge_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "length_of_stay",
+         "type": "\"integer\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql\n",
+    "\n",
+    "SELECT *\n",
+    "FROM hospital_records;"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 16: Patient Distribution by Department\n",
+    "Aggregate distinct patient counts per department to analyze patient load distribution."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "implicitDf": true,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506704995,
+     "inputWidgets": {},
+     "nuid": "90d5cd4f-b38c-4dda-8ea5-90540312607c",
+     "showTitle": false,
+     "startTime": 1788506703773,
+     "submitTime": 1788506703716,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>department</th><th>total_patients</th></tr></thead><tbody><tr><td>Cardiology</td><td>1</td></tr><tr><td>Orthopedics</td><td>1</td></tr><tr><td>Pediatrics</td><td>1</td></tr><tr><td>General Medicine</td><td>1</td></tr><tr><td>Neurology</td><td>1</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Cardiology",
+         1
+        ],
+        [
+         "Orthopedics",
+         1
+        ],
+        [
+         "Pediatrics",
+         1
+        ],
+        [
+         "General Medicine",
+         1
+        ],
+        [
+         "Neurology",
+         1
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {
+        "createTempViewForImplicitDf": true,
+        "dataframeName": "_sqldf",
+        "executionCount": 69
+       },
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_patients",
+         "type": "\"long\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql\n",
+    "\n",
+    "SELECT\n",
+    "    department,\n",
+    "    COUNT(DISTINCT patient_id) AS total_patients\n",
+    "FROM hospital_records\n",
+    "GROUP BY department\n",
+    "ORDER BY total_patients DESC;"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 17: Average Length of Stay by Department\n",
+    "Calculate rounded average length of stay (in days) grouped by medical department."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "implicitDf": true,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506731841,
+     "inputWidgets": {},
+     "nuid": "fd31d30b-1031-49a7-9c80-1a3b1101beda",
+     "showTitle": false,
+     "startTime": 1788506730749,
+     "submitTime": 1788506730713,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>department</th><th>average_length_of_stay</th></tr></thead><tbody><tr><td>Neurology</td><td>6.0</td></tr><tr><td>Cardiology</td><td>5.0</td></tr><tr><td>Orthopedics</td><td>5.0</td></tr><tr><td>Pediatrics</td><td>4.0</td></tr><tr><td>General Medicine</td><td>3.0</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Neurology",
+         6.0
+        ],
+        [
+         "Cardiology",
+         5.0
+        ],
+        [
+         "Orthopedics",
+         5.0
+        ],
+        [
+         "Pediatrics",
+         4.0
+        ],
+        [
+         "General Medicine",
+         3.0
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {
+        "createTempViewForImplicitDf": true,
+        "dataframeName": "_sqldf",
+        "executionCount": 71
+       },
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "average_length_of_stay",
+         "type": "\"double\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql\n",
+    "\n",
+    "SELECT\n",
+    "    department,\n",
+    "    ROUND(\n",
+    "        AVG(length_of_stay),\n",
+    "        2\n",
+    "    ) AS average_length_of_stay\n",
+    "FROM hospital_records\n",
+    "GROUP BY department\n",
+    "ORDER BY average_length_of_stay DESC;"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 18: Total Admissions by Diagnosis\n",
+    "Summarize total patient admissions grouped by primary diagnosis."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "implicitDf": true,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506779691,
+     "inputWidgets": {},
+     "nuid": "e2e8557d-03d0-46d4-9e9c-19be11b55d76",
+     "showTitle": false,
+     "startTime": 1788506778681,
+     "submitTime": 1788506778650,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>diagnosis</th><th>total_admissions</th></tr></thead><tbody><tr><td>Heart Disease</td><td>1</td></tr><tr><td>Bone Fracture</td><td>1</td></tr><tr><td>Viral Fever</td><td>1</td></tr><tr><td>Diabetes</td><td>1</td></tr><tr><td>Migraine</td><td>1</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Heart Disease",
+         1
+        ],
+        [
+         "Bone Fracture",
+         1
+        ],
+        [
+         "Viral Fever",
+         1
+        ],
+        [
+         "Diabetes",
+         1
+        ],
+        [
+         "Migraine",
+         1
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {
+        "createTempViewForImplicitDf": true,
+        "dataframeName": "_sqldf",
+        "executionCount": 73
+       },
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_admissions",
+         "type": "\"long\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql\n",
+    "\n",
+    "SELECT\n",
+    "    diagnosis,\n",
+    "    COUNT(*) AS total_admissions\n",
+    "FROM hospital_records\n",
+    "GROUP BY diagnosis\n",
+    "ORDER BY total_admissions DESC;"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 19: Doctor Performance Analysis\n",
+    "Evaluate total admissions and distinct patients handled per physician across departments."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506806727,
+     "inputWidgets": {},
+     "nuid": "0497c87a-9a54-4473-bda1-61c5aed988b2",
+     "showTitle": false,
+     "startTime": 1788506805578,
+     "submitTime": 1788506805545,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>doctor_name</th><th>department</th><th>total_admissions</th><th>total_patients</th></tr></thead><tbody><tr><td>Dr. Rajesh Kumar</td><td>Cardiology</td><td>1</td><td>1</td></tr><tr><td>Dr. Amit Verma</td><td>Orthopedics</td><td>1</td><td>1</td></tr><tr><td>Dr. Sneha Reddy</td><td>Pediatrics</td><td>1</td><td>1</td></tr><tr><td>Dr. Arjun Rao</td><td>General Medicine</td><td>1</td><td>1</td></tr><tr><td>Dr. Priya Sharma</td><td>Neurology</td><td>1</td><td>1</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Dr. Rajesh Kumar",
+         "Cardiology",
+         1,
+         1
+        ],
+        [
+         "Dr. Amit Verma",
+         "Orthopedics",
+         1,
+         1
+        ],
+        [
+         "Dr. Sneha Reddy",
+         "Pediatrics",
+         1,
+         1
+        ],
+        [
+         "Dr. Arjun Rao",
+         "General Medicine",
+         1,
+         1
+        ],
+        [
+         "Dr. Priya Sharma",
+         "Neurology",
+         1,
+         1
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {
+        "createTempViewForImplicitDf": true,
+        "dataframeName": "_sqldf",
+        "executionCount": 76
+       },
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_admissions",
+         "type": "\"long\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_patients",
+         "type": "\"long\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql\n",
+    "\n",
+    "SELECT\n",
+    "    doctor_name,\n",
+    "    department,\n",
+    "    COUNT(DISTINCT admission_id) AS total_admissions,\n",
+    "    COUNT(DISTINCT patient_id) AS total_patients\n",
+    "FROM hospital_records\n",
+    "GROUP BY\n",
+    "    doctor_name,\n",
+    "    department\n",
+    "ORDER BY total_admissions DESC;"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 20: Geographic Patient Demographics\n",
+    "Analyze geographical breakdown of patients grouped by city of origin."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "implicitDf": true,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506834155,
+     "inputWidgets": {},
+     "nuid": "816c5b9c-ef84-4439-80d0-f91ccced7e19",
+     "showTitle": false,
+     "startTime": 1788506833208,
+     "submitTime": 1788506833148,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>city</th><th>total_patients</th></tr></thead><tbody><tr><td>Hyderabad</td><td>2</td></tr><tr><td>Bangalore</td><td>1</td></tr><tr><td>Delhi</td><td>1</td></tr><tr><td>Mumbai</td><td>1</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "Hyderabad",
+         2
+        ],
+        [
+         "Bangalore",
+         1
+        ],
+        [
+         "Delhi",
+         1
+        ],
+        [
+         "Mumbai",
+         1
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {
+        "createTempViewForImplicitDf": true,
+        "dataframeName": "_sqldf",
+        "executionCount": 77
+       },
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "total_patients",
+         "type": "\"long\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "%sql\n",
+    "\n",
+    "SELECT\n",
+    "    city,\n",
+    "    COUNT(DISTINCT patient_id) AS total_patients\n",
+    "FROM hospital_records\n",
+    "GROUP BY city\n",
+    "ORDER BY total_patients DESC;"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 21: Create Master Healthcare Analytics View\n",
+    "Create or replace a global analytics SQL View named `healthcare_analytics_view` over the silver record source."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506875792,
+     "inputWidgets": {},
+     "nuid": "847b54be-137f-4a48-ab59-8d3a0597cb39",
+     "showTitle": false,
+     "startTime": 1788506874450,
+     "submitTime": 1788506874410,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "DataFrame[]"
+      ]
+     },
+     "execution_count": 81,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "spark.sql(\"\"\"\n",
+    "CREATE OR REPLACE VIEW\n",
+    "workspace.healthcare.healthcare_analytics_view\n",
+    "AS\n",
+    "SELECT\n",
+    "    admission_id,\n",
+    "    patient_id,\n",
+    "    first_name,\n",
+    "    last_name,\n",
+    "    age,\n",
+    "    gender,\n",
+    "    city,\n",
+    "    doctor_id,\n",
+    "    doctor_name,\n",
+    "    department,\n",
+    "    specialization,\n",
+    "    diagnosis,\n",
+    "    admission_date,\n",
+    "    discharge_date,\n",
+    "    length_of_stay\n",
+    "FROM workspace.healthcare.silver_hospital_records\n",
+    "\"\"\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 22: Validate Created Analytics View\n",
+    "Display contents from the newly created `workspace.healthcare.healthcare_analytics_view`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506910336,
+     "inputWidgets": {},
+     "nuid": "feb8077f-5dca-4fd2-ac64-020245780648",
+     "showTitle": false,
+     "startTime": 1788506908573,
+     "submitTime": 1788506908538,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style scoped>\n",
+       "  .table-result-container {\n",
+       "    max-height: 300px;\n",
+       "    overflow: auto;\n",
+       "  }\n",
+       "  table, th, td {\n",
+       "    border: 1px solid black;\n",
+       "    border-collapse: collapse;\n",
+       "  }\n",
+       "  th, td {\n",
+       "    padding: 5px;\n",
+       "  }\n",
+       "  th {\n",
+       "    text-align: left;\n",
+       "  }\n",
+       "</style><div class='table-result-container'><table class='table-result'><thead style='background-color: white'><tr><th>admission_id</th><th>patient_id</th><th>first_name</th><th>last_name</th><th>age</th><th>gender</th><th>city</th><th>doctor_id</th><th>doctor_name</th><th>department</th><th>specialization</th><th>diagnosis</th><th>admission_date</th><th>discharge_date</th><th>length_of_stay</th></tr></thead><tbody><tr><td>A004</td><td>P004</td><td>Sneha</td><td>Patel</td><td>31</td><td>FEMALE</td><td>Bangalore</td><td>D004</td><td>Dr. Sneha Reddy</td><td>Pediatrics</td><td>Pediatrician</td><td>Viral Fever</td><td>2026-02-08</td><td>2026-02-12</td><td>4</td></tr><tr><td>A003</td><td>P003</td><td>Arjun</td><td>Reddy</td><td>48</td><td>MALE</td><td>Hyderabad</td><td>D003</td><td>Dr. Amit Verma</td><td>Orthopedics</td><td>Orthopedic Surgeon</td><td>Bone Fracture</td><td>2026-02-05</td><td>2026-02-10</td><td>5</td></tr><tr><td>A005</td><td>P005</td><td>Vikram</td><td>Singh</td><td>MALE</td><td>44</td><td>Delhi</td><td>D005</td><td>Dr. Arjun Rao</td><td>General Medicine</td><td>General Physician</td><td>Diabetes</td><td>2026-03-01</td><td>2026-03-04</td><td>3</td></tr><tr><td>A001</td><td>P001</td><td>Rahul</td><td>Sharma</td><td>MALE</td><td>41</td><td>Hyderabad</td><td>D001</td><td>Dr. Rajesh Kumar</td><td>Cardiology</td><td>Cardiologist</td><td>Heart Disease</td><td>2026-01-10</td><td>2026-01-15</td><td>5</td></tr><tr><td>A002</td><td>P002</td><td>Priya</td><td>Rao</td><td>36</td><td>FEMALE</td><td>Mumbai</td><td>D002</td><td>Dr. Priya Sharma</td><td>Neurology</td><td>Neurologist</td><td>Migraine</td><td>2026-01-12</td><td>2026-01-18</td><td>6</td></tr></tbody></table></div>"
+      ]
+     },
+     "metadata": {
+      "application/vnd.databricks.v1+output": {
+       "addedWidgets": {},
+       "aggData": [],
+       "aggError": "",
+       "aggOverflow": false,
+       "aggSchema": [],
+       "aggSeriesLimitReached": false,
+       "aggType": "",
+       "arguments": {},
+       "columnCustomDisplayInfos": {},
+       "data": [
+        [
+         "A004",
+         "P004",
+         "Sneha",
+         "Patel",
+         31,
+         "FEMALE",
+         "Bangalore",
+         "D004",
+         "Dr. Sneha Reddy",
+         "Pediatrics",
+         "Pediatrician",
+         "Viral Fever",
+         "2026-02-08",
+         "2026-02-12",
+         4
+        ],
+        [
+         "A003",
+         "P003",
+         "Arjun",
+         "Reddy",
+         48,
+         "MALE",
+         "Hyderabad",
+         "D003",
+         "Dr. Amit Verma",
+         "Orthopedics",
+         "Orthopedic Surgeon",
+         "Bone Fracture",
+         "2026-02-05",
+         "2026-02-10",
+         5
+        ],
+        [
+         "A005",
+         "P005",
+         "Vikram",
+         "Singh",
+         "MALE",
+         44,
+         "Delhi",
+         "D005",
+         "Dr. Arjun Rao",
+         "General Medicine",
+         "General Physician",
+         "Diabetes",
+         "2026-03-01",
+         "2026-03-04",
+         3
+        ],
+        [
+         "A001",
+         "P001",
+         "Rahul",
+         "Sharma",
+         "MALE",
+         41,
+         "Hyderabad",
+         "D001",
+         "Dr. Rajesh Kumar",
+         "Cardiology",
+         "Cardiologist",
+         "Heart Disease",
+         "2026-01-10",
+         "2026-01-15",
+         5
+        ],
+        [
+         "A002",
+         "P002",
+         "Priya",
+         "Rao",
+         36,
+         "FEMALE",
+         "Mumbai",
+         "D002",
+         "Dr. Priya Sharma",
+         "Neurology",
+         "Neurologist",
+         "Migraine",
+         "2026-01-12",
+         "2026-01-18",
+         6
+        ]
+       ],
+       "datasetInfos": [],
+       "dbfsResultPath": null,
+       "isJsonSchema": true,
+       "metadata": {},
+       "overflow": false,
+       "plotOptions": {
+        "customPlotOptions": {},
+        "displayType": "table",
+        "pivotAggregation": null,
+        "pivotColumns": null,
+        "xColumns": null,
+        "yColumns": null
+       },
+       "removedWidgets": [],
+       "schema": [
+        {
+         "metadata": "{}",
+         "name": "admission_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "patient_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "first_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "last_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "age",
+         "type": "\"integer\""
+        },
+        {
+         "metadata": "{}",
+         "name": "gender",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "city",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_id",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "doctor_name",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "department",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "specialization",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "diagnosis",
+         "type": "\"string\""
+        },
+        {
+         "metadata": "{}",
+         "name": "admission_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "discharge_date",
+         "type": "\"date\""
+        },
+        {
+         "metadata": "{}",
+         "name": "length_of_stay",
+         "type": "\"integer\""
+        }
+       ],
+       "type": "table"
+      }
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "display(\n",
+    "    spark.table(\n",
+    "        \"workspace.healthcare.healthcare_analytics_view\"\n",
+    "    )\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Step 23: List Workspace Schema Tables and Views\n",
+    "Display all registered tables and views inside the `workspace.healthcare` schema."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "application/vnd.databricks.v1+cell": {
+     "cellMetadata": {
+      "byteLimit": 2048000,
+      "rowLimit": 10000
+     },
+     "finishTime": 1788506961491,
+     "inputWidgets": {},
+     "nuid": "c55f1ab2-1695-4415-90c5-593a42134dc0",
+     "showTitle": false,
+     "startTime": 1788506960744,
+     "submitTime": 1788506960687,
+     "tableResultSettingsMap": {},
+     "title": ""
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "+----------+---------------------------+-----------+\n|database  |tableName                  |isTemporary|\n+----------+---------------------------+-----------+\n|healthcare|bronze_admissions          |false      |\n|healthcare|bronze_doctors             |false      |\n|healthcare|bronze_patients            |false      |\n|healthcare|gold_data_quality_report   |false      |\n|healthcare|gold_department_performance|false      |\n|healthcare|gold_disease_summary       |false      |\n|healthcare|gold_doctor_performance    |false      |\n|healthcare|gold_hospital_kpis         |false      |\n|healthcare|gold_patient_summary       |false      |\n|healthcare|healthcare_analytics_view  |false      |\n|healthcare|silver_admissions          |false      |\n|healthcare|silver_doctors             |false      |\n|healthcare|silver_hospital_records    |false      |\n|healthcare|silver_patients            |false      |\n|          |hospital_records           |true       |\n+----------+---------------------------+-----------+\n\n"
+     ]
+    }
+   ],
+   "source": [
+    "spark.sql(\"\"\"\n",
+    "SHOW TABLES IN workspace.healthcare\n",
+    "\"\"\").show(truncate=False)"
+   ]
+  }
+ ],
+ "metadata": {
+  "application/vnd.databricks.v1+notebook": {
+   "computePreferences": null,
+   "dashboards": [],
+   "environmentMetadata": {
+    "base_environment": "",
+    "environment_version": "5"
+   },
+   "inputWidgetPreferences": null,
+   "language": "python",
+   "notebookMetadata": {
+    "mostRecentlyExecutedCommandWithImplicitDF": {
+     "commandId": 6360865640504609,
+     "dataframes": [
+      "_sqldf"
+     ]
+    },
+    "pythonIndentUnit": 4
+   },
+   "notebookName": "05_Healthcare_DataQuality_SQL",
+   "widgets": {}
+  },
+  "language_info": {
+   "name": "python"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}
